@@ -1,0 +1,5 @@
+build/
+CmakeFiles/
+CMakeCache.txt
+.github/
+.vscode/
