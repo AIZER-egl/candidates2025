@@ -5,47 +5,47 @@
 #define BOTON 15
 
 void ActionButton::begin() {
-    gpio_init(BOTON);
-    gpio_set_dir(BOTON, GPIO_IN);
-    state = NONE;
-    sinceKeydown = 0;
-    sinceKeyup = 0;
-    buttonTimestamp = 0;
-    lastPhysicalButton = false;
-    physicalButton = false;
+	gpio_init(BOTON);
+	gpio_set_dir(BOTON, GPIO_IN);
+	state = NONE;
+	sinceKeydown = 0;
+	sinceKeyup = 0;
+	buttonTimestamp = 0;
+	previousPhysicalButton = false;
+	physicalButton = false;
 }
 
 void ActionButton::tick() {
-    bool buttonPressed = gpio_get(BOTON);
-    uint32_t now = time_us_64() / 1000; // compute now each tick
+	uint32_t now = time_us_64() / 1000; // compute now each tick
 
-    if (now - buttonTimestamp >= 10) {
-        buttonTimestamp = now;
+	if (now - buttonTimestamp >= 5) {
+		physicalButton = gpio_get(BOTON);
+		bool button_just_pressed = physicalButton && !previousPhysicalButton;
+		bool button_just_released = !physicalButton && previousPhysicalButton;
 
-        if (buttonPressed && !lastPhysicalButton) {
-            // Button was just pressed
-            if (now - sinceKeydown < 50) return;
-            state = PRESSED;
-            sinceKeydown = now;
+		if (state != NONE) state = NONE;
 
-        } else if (!buttonPressed && lastPhysicalButton) {
-            // Button was just released
-            state = NONE;
-            sinceKeyup = now;
+		if (button_just_pressed) {
+			sinceKeydown = now;
+			sinceKeyup = 0;
+		} else if (button_just_released) {
+			if (now - sinceKeydown >= 1000) {
+				state = HOLD;
+			} else if (now - sinceKeydown >= 20) {
+				state = PRESSED;
+			}
 
-        } else if (buttonPressed && lastPhysicalButton) {
-            // Button is being held down
-            if (now - sinceKeydown >= 1000) state = HOLD;
+			sinceKeydown = 0;
+			sinceKeyup = now;
+		}
 
-        } else {
-            // Button is not pressed
-            state = NONE;
-        }
-
-        lastPhysicalButton = buttonPressed;
-    }
+		previousPhysicalButton = physicalButton;
+		buttonTimestamp = now;
+	}
 }
 
 State ActionButton::getState() {
-    return state;
+	State original_state = state;
+	if (state != NONE) state = NONE;
+	return original_state;
 }
