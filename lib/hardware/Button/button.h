@@ -24,7 +24,7 @@ private:
     uint32_t sinceKeyup;
     uint32_t buttonTimestamp;
     bool physicalButton;
-    bool lastPhysicalButton;
+    bool previousPhysicalButton;
 };
 
 #endif //BUTTON_H

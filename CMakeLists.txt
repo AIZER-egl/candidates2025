@@ -37,6 +37,13 @@ else()
         message(WARNING "No SSD1306 C implementation found. Put ssd1306.c in lib/hardware or lib/pico-ssd1306, or add your C sources under lib/")
     endif()
 endif()
+
+# Ensure Button C++ implementation is compiled if it exists
+if(EXISTS "${CMAKE_SOURCE_DIR}/lib/hardware/Button/button.cpp")
+    target_sources(main PRIVATE "${CMAKE_SOURCE_DIR}/lib/hardware/Button/button.cpp")
+else()
+    message(WARNING "No Button C++ implementation found. Put button.cpp in lib/hardware/Button/")
+endif()
 # --- end SSD1306 / lib inclusion ---
 
 pico_enable_stdio_usb(main 1)
