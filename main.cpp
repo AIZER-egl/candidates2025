@@ -77,6 +77,8 @@ int main() {
         
         if (button_state == PRESSED) {
             std::cout << "Button Pressed" << std::endl;
+            selected_line = (selected_line + 1) % text_lines.size();
+            update_display(&oled, text_lines, selected_line);
         } else if (button_state == HOLD) {
             std::cout << "Button hold" << std::endl;
         }
