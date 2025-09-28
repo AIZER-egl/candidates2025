@@ -1,6 +1,8 @@
 #ifndef _inc_font
 #define _inc_font
 
+#include <cstdint>
+
 /*
  * Format
  * <height>, <width>, <additional spacing per char>, 
