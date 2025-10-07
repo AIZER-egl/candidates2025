@@ -1,7 +1,3 @@
-//
-// Created by kali on 3/31/24.
-//
-
 #include "hex.h"
 
 std::string hex::encode(uint64_t value) {
