@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
+# Pull in PICO SDK (must be before project)
 include(pico_sdk_import.cmake)
 
 project(main C CXX ASM)
@@ -12,41 +13,23 @@ set(PICO_EXAMPLES_PATH ${PROJECT_SOURCE_DIR})
 pico_sdk_init()
 
 add_executable(main
-        main.cpp
+		main.cpp
+		lib/hardware/light_sensor.cpp
+		lib/hardware/compass_classes.cpp
+		lib/hardware/oled.cpp
+		lib/hardware/motor.cpp
+		lib/hardware/kicker.cpp
+		lib/hardware/action_button.cpp
+		lib/hardware/USB_Serial.cpp
+		lib/software/pid.cpp
+		lib/software/serializer.cpp
+		lib/software/hex.cpp
+		lib/software/knn.cpp
+		pico-lib/definitions/gpio.cpp
+		pico-lib/definitions/i2c.cpp
+		pico-lib/definitions/serial.cpp
+		pico-lib/definitions/time.cpp
 )
-
-# Add include directories
-target_include_directories(main PRIVATE lib/hardware)
-
-# --- Add SSD1306 / local lib C sources so symbols get linked ---
-# Prefer lib/hardware/ssd1306.c, fallback to lib/pico-ssd1306/ssd1306.c,
-# else add any .c under lib/ recursively.
-set(SSD1306_PRIMARY "${CMAKE_SOURCE_DIR}/lib/hardware/ssd1306.c")
-set(SSD1306_ALT     "${CMAKE_SOURCE_DIR}/lib/pico-ssd1306/ssd1306.c")
-
-if(EXISTS "${SSD1306_PRIMARY}")
-    target_sources(main PRIVATE "${SSD1306_PRIMARY}")
-elseif(EXISTS "${SSD1306_ALT}")
-    target_include_directories(main PRIVATE "${CMAKE_SOURCE_DIR}/lib/pico-ssd1306")
-    target_sources(main PRIVATE "${SSD1306_ALT}")
-else()
-    file(GLOB_RECURSE LIB_C_SRC "${CMAKE_SOURCE_DIR}/lib/*.c")
-    if(LIB_C_SRC)
-        target_sources(main PRIVATE ${LIB_C_SRC})
-    else()
-        message(WARNING "No SSD1306 C implementation found. Put ssd1306.c in lib/hardware or lib/pico-ssd1306, or add your C sources under lib/")
-    endif()
-endif()
-
-# Ensure Button C++ implementation is compiled if it exists
-if(EXISTS "${CMAKE_SOURCE_DIR}/lib/hardware/Button/button.cpp")
-    target_sources(main PRIVATE "${CMAKE_SOURCE_DIR}/lib/hardware/Button/button.cpp")
-else()
-    message(WARNING "No Button C++ implementation found. Put button.cpp in lib/hardware/Button/")
-endif()
-# --- end SSD1306 / lib inclusion ---
-
-pico_enable_stdio_usb(main 1)
 
 # Pull in our pico_stdlib which pulls in commonly used features
 target_link_libraries(main pico_stdlib)
@@ -60,6 +43,9 @@ target_link_libraries(main hardware_spi)
 target_link_libraries(main hardware_i2c)
 target_link_libraries(main hardware_irq)
 target_link_libraries(main hardware_timer)
+
+pico_enable_stdio_usb(main 1)
+pico_enable_stdio_uart(main 0)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(main)
