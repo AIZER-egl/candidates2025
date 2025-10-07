@@ -1,88 +1,76 @@
-#include "pico/stdlib.h"
-#include <hardware/i2c.h>
-#include <cstdio>
-#include <cstring>
-#include <cstdint>
-#include <vector>
-#include <string>
+/**
+* cd ~/Desktop/pico-lib/build
+ * make
+ *
+ * cp ~/Documents/RoboticProjects/RCJ_SOCCER_OPEN_2025/rpi_pico/build/main.uf2 /media/iker/RPI-RP2/main.uf2
+*/
 #include <iostream>
+#include <string>
+#include <cstdio>
 
+#include "pico/stdlib.h"
+#include "hardware/adc.h"
+#include "hardware/gpio.h"
+#include "lib/hardware/action_button.h"
+#include "pico-lib/gpio.h"
+#include "lib/software/serializer.h"
+#include "lib/software/pid.h"
+#include "lib/software/hex.h"
+#include "lib/hardware/kicker.h"
+#include "lib/hardware/motor.h"
+#include "lib/hardware/compass_classes.h"
+#include "lib/hardware/light_sensor.h"
 #include "lib/hardware/oled.h"
-#include "lib/hardware/Button/button.h"
+#include "lib/software/knn.h"
+#include "lib/software/calibrations.h"
 
-#define SDA 12
-#define SCL 13
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
+#define SDA 4
+#define SCL 5
+#define ARDUINO_I2C 8
+#define ACTION_BUTTON 28
 
-void update_display(ssd1306_t* oled, const std::vector<std::string>& text_lines, int selected_line) {
-    const int font_size = 1;
-    const int line_height = 8;
-    
-    ssd1306_clear(oled);
-    
-    for (int i = 0; i < text_lines.size(); i++) {
-        int y = i * line_height;
-        
-        if (i == selected_line) {
-            // Draw inverted line (selected)
-            int text_width = text_lines[i].length() * 6 * font_size;
-            ssd1306_draw_square(oled, 0, y, text_width, line_height);
-            ssd1306_clear_string(oled, 0, y, font_size, text_lines[i].c_str());
-        } else {
-            // Draw normal line
-            ssd1306_draw_string(oled, 0, y, font_size, text_lines[i].c_str());
-        }
-    }
-    
-    ssd1306_show(oled);
+#define ROBOT_ON true
+#define ROBOT_OFF false
+
+int main () {
+	stdio_init_all();
+	i2c_init(OLED_I2C_INSTANCE, 400 * 1000);
+	gpio_set_function(SDA, GPIO_FUNC_I2C);
+	gpio_set_function(SCL, GPIO_FUNC_I2C);
+
+	delay(2000);
+
+	BinarySerializationData data{};
+	Knn knn{};
+	Light_Sensor light_sensor;
+	Kicker kicker;
+	Motor motor;
+	Adafruit_BNO055 bno;
+
+	light_sensor.begin(data);
+	// kicker.begin(data);
+	motor.begin(data);
+	bno.begin(I2C_PORT_0, 100 * 1000, SDA, SCL, data);
+	knn.upload_dataset(dataset);
+
+	pinMode(BUILTIN_LED, OUTPUT);
+	digitalWrite(BUILTIN_LED, HIGH);
+
+	unsigned long long previous_motor = 0;
+	int i = 0;
+	for (;;) {
+		motor.tick();
+		bno.tick();
+		// kicker.tick();
+
+		if (millis() - previous_motor >= 5) {
+			motor.forward(0, 90, bno.yaw);
+			std::cout << "distance: " << motor.get_distance() << std::endl;
+			previous_motor = millis();
+		}
+	}
 }
 
-int main() {
-    stdio_init_all();
-    sleep_ms(2000);
-
-    // Initialize I2C (i2c0) at 400kHz
-    i2c_init(i2c0, 400000);
-    gpio_pull_up(SDA);
-    gpio_pull_up(SCL);
-    gpio_set_function(SDA, GPIO_FUNC_I2C);
-    gpio_set_function(SCL, GPIO_FUNC_I2C);
-
-    // Initialize button
-    ActionButton actionButton;
-    actionButton.begin();
-
-    // Configure and initialize the OLED
-    ssd1306_t oled;
-    oled.external_vcc = false;
-    bool ok = ssd1306_begin(&oled, 128, 64, 0x3c, i2c0);
-
-    std::vector<std::string> text_lines = {
-        "Reto #1",
-        "HOLA",
-        "Reto #2",
-        "Reto #69",
-        "VdC (BSD)"
-    };
-
-    int selected_line = 0;
-    
-    // Initial display update
-    update_display(&oled, text_lines, selected_line);
-
-    // Main loop
-    for (;;) {
-        actionButton.tick();
-        
-        State button_state = actionButton.getState();
-        
-        if (button_state == PRESSED) {
-            std::cout << "Button Pressed" << std::endl;
-            selected_line = (selected_line + 1) % text_lines.size();
-            update_display(&oled, text_lines, selected_line);
-        } else if (button_state == HOLD) {
-            std::cout << "Button hold" << std::endl;
-        }
-    }
-
-    return 0;
-}
+#pragma clang diagnostic pop
