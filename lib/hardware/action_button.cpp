@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "button.h"
-
-#define BOTON 15
+#include "action_button.h"
 
 void ActionButton::begin() {
 	gpio_init(BOTON);
@@ -44,7 +42,7 @@ void ActionButton::tick() {
 	}
 }
 
-State ActionButton::getState() {
+ActionButton::State ActionButton::getState() {
 	State original_state = state;
 	if (state != NONE) state = NONE;
 	return original_state;

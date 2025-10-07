@@ -7,8 +7,6 @@
 #pragma pack(push, 1)
 
 struct BinarySerializationData {
-	
-
 	int16_t compass_yaw;
 
 	/*
